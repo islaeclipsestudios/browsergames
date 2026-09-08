@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atomic Containment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #071018;
+      --panel: rgba(10, 20, 31, 0.9);
+      --panel-2: rgba(14, 28, 42, 0.82);
+      --text: #eef6ff;
+      --muted: #a8bac7;
+      --teal: #7de8d6;
+      --teal-deep: #2f8f95;
+      --gold: #d5a64d;
+      --gold-bright: #e6bb67;
+      --gold-deep: #a8792c;
+      --danger: #ff6f91;
+      --line: rgba(125, 232, 214, 0.26);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: radial-gradient(circle at top, #10263a, #071018 60%); }
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+.shell {
+  width: min(1200px, 100%);
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+    .panel {
+      background: linear-gradient(180deg, rgba(15,28,42,0.96), rgba(8,15,24,0.94));
+      border: 1px solid rgba(125, 232, 214, 0.14);
+      border-radius: 22px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+      backdrop-filter: blur(12px);
+    }
+.sidebar {
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(125, 232, 214, 0.2);
+      color: var(--teal);
+      font-size: 0.74rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+h1 {
+  margin: 8px 0 0;
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(1.7rem, 3vw, 2.45rem);
+  line-height: 0.96;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: balance;
+  max-width: 100%;
+  background: linear-gradient(180deg, #f4d98f 0%, var(--gold-bright) 34%, var(--gold) 64%, var(--gold-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+    .subtitle, .help, .stat-label { color: var(--muted); }
+.subtitle {
+  line-height: 1.55;
+  font-size: 0.96rem;
+  max-width: 28ch;
+}
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      padding: 14px;
+      border-radius: 16px;
+      background: var(--panel-2);
+      border: 1px solid rgba(125, 232, 214, 0.1);
+    }
+    .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; }
+    .stat-value {
+      margin-top: 6px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.25rem;
+      color: var(--text);
+    }
+    .controls {
+      display: grid;
+      gap: 10px;
+    }
+    .button-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      min-height: 46px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+    }
+    button:hover { transform: translateY(-1px); border-color: rgba(125,232,214,0.28); }
+    .primary {
+      background: linear-gradient(135deg, var(--gold-bright), var(--gold-deep));
+      color: #071018;
+      font-weight: 800;
+    }
+    .arena-wrap {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 4px 8px 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(8,18,28,0.96), rgba(5,12,20,0.98));
+      border: 1px solid rgba(125, 232, 214, 0.14);
+    }
+    .help {
+      padding: 0 8px 8px;
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+    kbd {
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      font-family: inherit;
+      color: var(--text);
+    }
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 0 8px 6px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .hidden { display: none; }
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel sidebar">
+      <div>
+        <h1>Atomic Containment</h1>
+      </div>
+      <p class="subtitle">Project containment beams to seal atomic space. Do not let the atom hit a beam while it forms.</p>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Level</div><div class="stat-value" id="level">1</div></div>
+        <div class="stat"><div class="stat-label">Integrity</div><div class="stat-value" id="lives">3</div></div>
+        <div class="stat"><div class="stat-label">Stability</div><div class="stat-value" id="progress">0%</div></div>
+        <div class="stat"><div class="stat-label">Direction</div><div class="stat-value" id="direction">Vertical</div></div>
+      </div>
+      <div class="controls">
+        <div class="button-row">
+          <button class="primary" id="restartBtn">Restart Run</button>
+          <button id="toggleBtn">Toggle Beam</button>
+        </div>
+      </div>
+      <div class="help">
+  Click to place a beam. Press <kbd>Space</kbd> to toggle beam. Reach <strong>75%</strong> stability. Higher levels add more atoms.
+</div>
+    </aside>
+    <main class="panel arena-wrap">
+      <div class="topbar">
+        <div id="status">Contain the atom.</div>
+        <div id="goal">Goal: 75%</div>
+      </div>
+      <canvas id="game" width="860" height="620" aria-label="Atomic Containment playfield"></canvas>
+      <div class="legend">
+        <span><span class="dot" style="background:#7de8d6"></span>Containment beams</span>
+        <span><span class="dot" style="background:#ff7ea5"></span>Unstable atoms</span>
+        <span><span class="dot" style="background:#d5a64d"></span>Stabilized space</span>
+      </div>
+    </main>
+  </div>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    const gridSize = 10;
+    const cols = Math.floor(W / gridSize);
+    const rows = Math.floor(H / gridSize);
+    const targetPercent = 75;
+
+    const levelEl = document.getElementById('level');
+    const livesEl = document.getElementById('lives');
+    const progressEl = document.getElementById('progress');
+    const directionEl = document.getElementById('direction');
+    const statusEl = document.getElementById('status');
+    const restartBtn = document.getElementById('restartBtn');
+    const toggleBtn = document.getElementById('toggleBtn');
+
+    let state;
+
+    function createGrid() {
+      const grid = [];
+      for (let y = 0; y < rows; y++) {
+        grid[y] = [];
+        for (let x = 0; x < cols; x++) {
+          grid[y][x] = 0;
+        }
+      }
+      for (let x = 0; x < cols; x++) {
+        grid[0][x] = 1;
+        grid[rows - 1][x] = 1;
+      }
+      for (let y = 0; y < rows; y++) {
+        grid[y][0] = 1;
+        grid[y][cols - 1] = 1;
+      }
+      return grid;
+    }
+
+    function createAtoms(count) {
+      const atoms = [];
+      for (let i = 0; i < count; i++) {
+        let x = 120 + Math.random() * (W - 240);
+        let y = 120 + Math.random() * (H - 240);
+        const speed = 2 + Math.random() * 1.1 + state.level * 0.15;
+        const angle = Math.random() * Math.PI * 2;
+        atoms.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, r: 14 });
+      }
+      return atoms;
+    }
+
+    function resetGame(full = true) {
+      const level = full ? 1 : state.level;
+      const lives = full ? 3 : state.lives;
+      state = {
+        level,
+        lives,
+        direction: state?.direction || 'vertical',
+        grid: createGrid(),
+        atoms: [],
+        growing: null,
+        capturedPercent: 0,
+        gameOver: false,
+        winPause: 0
+      };
+      state.atoms = createAtoms(Math.min(1 + state.level, 4));
+      updateHud();
+      statusEl.textContent = 'Contain the atom.';
+    }
+
+    function updateHud() {
+      levelEl.textContent = String(state.level);
+      livesEl.textContent = String(state.lives);
+      progressEl.textContent = `${Math.floor(state.capturedPercent)}%`;
+      directionEl.textContent = state.direction === 'vertical' ? 'Vertical' : 'Horizontal';
+    }
+
+    function toggleDirection() {
+      state.direction = state.direction === 'vertical' ? 'horizontal' : 'vertical';
+      updateHud();
+    }
+
+    function cellAt(px, py) {
+      return {
+        x: Math.max(0, Math.min(cols - 1, Math.floor(px / gridSize))),
+        y: Math.max(0, Math.min(rows - 1, Math.floor(py / gridSize)))
+      };
+    }
+
+    function placeBeam(px, py) {
+      if (state.gameOver || state.growing || state.winPause > 0) return;
+      const c = cellAt(px, py);
+      if (state.grid[c.y][c.x] !== 0) return;
+      const axis = state.direction;
+      state.growing = {
+        axis,
+        origin: c,
+        forward: { done: false, cells: [] },
+        backward: { done: false, cells: [] }
+      };
+      statusEl.textContent = axis === 'vertical' ? 'Vertical beam forming...' : 'Horizontal beam forming...';
+    }
+
+    function stepGrowing() {
+      const g = state.growing;
+      if (!g) return;
+      const axis = g.axis;
+      const dirs = axis === 'vertical'
+        ? [{ part: g.forward, dx: 0, dy: 1 }, { part: g.backward, dx: 0, dy: -1 }]
+        : [{ part: g.forward, dx: 1, dy: 0 }, { part: g.backward, dx: -1, dy: 0 }];
+      for (const entry of dirs) {
+        const part = entry.part;
+        if (part.done) continue;
+        const last = part.cells.length ? part.cells[part.cells.length - 1] : g.origin;
+        const nx = last.x + entry.dx;
+        const ny = last.y + entry.dy;
+        if (nx < 0 || ny < 0 || nx >= cols || ny >= rows || state.grid[ny][nx] === 1) {
+          part.done = true;
+        } else {
+          part.cells.push({ x: nx, y: ny });
+        }
+      }
+      if (beamHitByAtom(g)) {
+        loseLife();
+        return;
+      }
+      if (g.forward.done && g.backward.done) {
+        finalizeBeam(g);
+        state.growing = null;
+      }
+    }
+
+    function beamCells(g) {
+      const cells = [g.origin, ...g.forward.cells, ...g.backward.cells];
+      const uniq = new Map();
+      for (const c of cells) uniq.set(`${c.x},${c.y}`, c);
+      return [...uniq.values()];
+    }
+
+    function beamHitByAtom(g) {
+      const cells = beamCells(g);
+      for (const atom of state.atoms) {
+        for (const c of cells) {
+          const rx = c.x * gridSize;
+          const ry = c.y * gridSize;
+          if (atom.x + atom.r > rx && atom.x - atom.r < rx + gridSize && atom.y + atom.r > ry && atom.y - atom.r < ry + gridSize) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function loseLife() {
+      state.growing = null;
+      state.lives -= 1;
+      updateHud();
+      if (state.lives <= 0) {
+        state.gameOver = true;
+        statusEl.textContent = 'Containment failed. Restart the run.';
+      } else {
+        statusEl.textContent = 'Beam disrupted. Integrity lost.';
+      }
+    }
+
+    function finalizeBeam(g) {
+      const cells = beamCells(g);
+      for (const c of cells) state.grid[c.y][c.x] = 1;
+      floodFillCapture();
+      state.capturedPercent = computeCapturedPercent();
+      updateHud();
+      if (state.capturedPercent >= targetPercent) {
+        state.winPause = 90;
+        statusEl.textContent = 'Chamber stabilized. Advancing level...';
+      } else {
+        statusEl.textContent = 'Containment beam locked.';
+      }
+    }
+
+    function floodFillCapture() {
+      const safe = Array.from({ length: rows }, () => Array(cols).fill(false));
+      const queue = [];
+      for (const atom of state.atoms) {
+        const c = cellAt(atom.x, atom.y);
+        if (!safe[c.y][c.x] && state.grid[c.y][c.x] === 0) {
+          safe[c.y][c.x] = true;
+          queue.push(c);
+        }
+      }
+      while (queue.length) {
+        const { x, y } = queue.shift();
+        const neighbors = [[1,0],[-1,0],[0,1],[0,-1]];
+        for (const [dx, dy] of neighbors) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+          if (safe[ny][nx]) continue;
+          if (state.grid[ny][nx] !== 0) continue;
+          safe[ny][nx] = true;
+          queue.push({ x: nx, y: ny });
+        }
+      }
+      for (let y = 1; y < rows - 1; y++) {
+        for (let x = 1; x < cols - 1; x++) {
+          if (state.grid[y][x] === 0 && !safe[y][x]) state.grid[y][x] = 2;
+        }
+      }
+    }
+
+    function computeCapturedPercent() {
+      let totalOpen = 0;
+      let captured = 0;
+      for (let y = 1; y < rows - 1; y++) {
+        for (let x = 1; x < cols - 1; x++) {
+          if (state.grid[y][x] !== 1) totalOpen += 1;
+          if (state.grid[y][x] === 2) captured += 1;
+        }
+      }
+      return totalOpen ? (captured / totalOpen) * 100 : 0;
+    }
+
+    function moveAtoms() {
+      for (const atom of state.atoms) {
+        atom.x += atom.vx;
+        atom.y += atom.vy;
+        const left = atom.x - atom.r;
+        const right = atom.x + atom.r;
+        const top = atom.y - atom.r;
+        const bottom = atom.y + atom.r;
+        if (collidesWithSolid(left, atom.y) || collidesWithSolid(right, atom.y)) {
+          atom.vx *= -1;
+          atom.x += atom.vx;
+        }
+        if (collidesWithSolid(atom.x, top) || collidesWithSolid(atom.x, bottom)) {
+          atom.vy *= -1;
+          atom.y += atom.vy;
+        }
+        if (state.growing && beamHitByAtom(state.growing)) {
+          loseLife();
+          return;
+        }
+      }
+    }
+
+    function collidesWithSolid(px, py) {
+      const c = cellAt(px, py);
+      return state.grid[c.y][c.x] === 1 || state.grid[c.y][c.x] === 2;
+    }
+
+    function nextLevel() {
+      state.level += 1;
+      const lives = Math.min(5, state.lives + 1);
+      state = { ...state, lives, direction: state.direction };
+      resetGame(false);
+      state.lives = lives;
+      updateHud();
+      statusEl.textContent = 'A denser atomic chamber has formed.';
+    }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, W, H);
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, '#0a1a26');
+      grad.addColorStop(1, '#071018');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const cell = state.grid[y][x];
+          if (cell === 1) {
+            ctx.fillStyle = 'rgba(125, 232, 214, 0.88)';
+            ctx.fillRect(x * gridSize, y * gridSize, gridSize, gridSize);
+          } else if (cell === 2) {
+            ctx.fillStyle = 'rgba(213, 166, 77, 0.22)';
+            ctx.fillRect(x * gridSize, y * gridSize, gridSize, gridSize);
+          }
+        }
+      }
+      ctx.strokeStyle = 'rgba(125, 232, 214, 0.08)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= cols; x += 4) {
+        ctx.beginPath();
+        ctx.moveTo(x * gridSize, 0);
+        ctx.lineTo(x * gridSize, H);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= rows; y += 4) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * gridSize);
+        ctx.lineTo(W, y * gridSize);
+        ctx.stroke();
+      }
+    }
+
+    function drawGrowing() {
+      if (!state.growing) return;
+      const cells = beamCells(state.growing);
+      for (const c of cells) {
+        ctx.fillStyle = 'rgba(125, 232, 214, 1)';
+        ctx.fillRect(c.x * gridSize, c.y * gridSize, gridSize, gridSize);
+      }
+    }
+
+    function drawAtoms() {
+      for (const atom of state.atoms) {
+        const glow = ctx.createRadialGradient(atom.x, atom.y, 4, atom.x, atom.y, atom.r + 10);
+        glow.addColorStop(0, 'rgba(255, 175, 198, 0.95)');
+        glow.addColorStop(0.5, 'rgba(255, 110, 145, 0.55)');
+        glow.addColorStop(1, 'rgba(255, 110, 145, 0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(atom.x, atom.y, atom.r + 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(125, 232, 214, 0.38)';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.ellipse(atom.x, atom.y, atom.r + 6 + i * 5, atom.r / 2 + i * 3, (performance.now()/900 + i) % Math.PI, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = '#ff7ea5';
+        ctx.beginPath();
+        ctx.arc(atom.x, atom.y, atom.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffd8e3';
+        ctx.beginPath();
+        ctx.arc(atom.x - 4, atom.y - 4, atom.r * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let i = 0; i < 3; i++) {
+          const a = performance.now() / 600 + i * (Math.PI * 2 / 3);
+          const ex = atom.x + Math.cos(a) * (atom.r + 10 + i * 2);
+          const ey = atom.y + Math.sin(a) * (atom.r / 1.3 + 10);
+          ctx.fillStyle = '#7de8d6';
+          ctx.beginPath();
+          ctx.arc(ex, ey, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    function loop() {
+      if (!state.gameOver) {
+        if (state.winPause > 0) {
+          state.winPause -= 1;
+          if (state.winPause === 0) nextLevel();
+        } else {
+          moveAtoms();
+          stepGrowing();
+        }
+      }
+      drawBackground();
+      drawGrowing();
+      drawAtoms();
+      requestAnimationFrame(loop);
+    }
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      placeBeam((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        toggleDirection();
+      }
+      if (e.key.toLowerCase() === 'r') resetGame(true);
+    });
+
+    restartBtn.addEventListener('click', () => resetGame(true));
+    toggleBtn.addEventListener('click', toggleDirection);
+
+    resetGame(true);
+    loop();
+  </script>
+</body>
+</html>
